@@ -61,12 +61,13 @@ const DB = {
                 const local = localStorage.getItem("tracker_db");
                 if (local) {
                     try {
-                        const binary = atob(local);
-                        const bytes = new Uint8Array(binary.length);
-                        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                        savedData = bytes;
-                        console.log("📂 Загружено из localStorage");
-                    } catch (e) {}
+                        const arr = JSON.parse(local);
+                        savedData = new Uint8Array(arr);
+                        console.log("📂 Загружено из localStorage (" + arr.length + " байт)");
+                    } catch (e) {
+                        console.warn("Ошибка загрузки из localStorage, стартуем чистую БД");
+                    }
+                }
                 }
             }
 
@@ -176,13 +177,8 @@ const DB = {
         try {
             const data = this.db.export();
             const bytes = new Uint8Array(data);
-            let binary = "";
-            const chunkSize = 8192;
-            for (let i = 0; i < bytes.length; i += chunkSize) {
-                binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
-            }
-            binary = btoa(binary);
-            localStorage.setItem("tracker_db", binary);
+            // Сохраняем как JSON-массив чисел — 100% надёжно (не btoa)
+            localStorage.setItem("tracker_db", JSON.stringify(Array.from(bytes)));
         } catch (e) {
             console.warn("Save error:", e);
         }

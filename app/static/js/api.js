@@ -5,7 +5,10 @@
 
 // Глобальная функция выхода — не зависит от инициализации
 function logout() {
+    // Чистим старый мусор
     localStorage.removeItem("current_user_id");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
     if (typeof DB !== 'undefined' && DB.currentUser) DB.currentUser = null;
     window.location.href = '/login';
 }
