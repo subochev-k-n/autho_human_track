@@ -214,7 +214,6 @@ const DB = {
             }
             return true;
         } catch (e) {
-            console.error("DB run:", e.message, sql);
             throw e;
         }
     },
@@ -239,7 +238,6 @@ const DB = {
             stmt.free();
             return rows;
         } catch (e) {
-            console.error("DB query:", e.message, sql);
             return [];
         }
     },
