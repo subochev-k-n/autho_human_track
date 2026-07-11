@@ -1,46 +1,74 @@
 // ============================================
-// SQLite Wasm + OPFS — БД на устройстве пользователя
+// SQLite через sql.js — БД на устройстве пользователя
 // ============================================
 
 const DB = {
     db: null,
     currentUser: null,
+    _dirty: false,
+    _saveTimer: null,
 
-    // Инициализация SQLite Wasm
+    // Инициализация sql.js
     init: async function () {
-        if (this.db) return;
+        if (this.db) return this.db;
+
+        const SQL_URL = "https://cdn.jsdelivr.net/npm/sql.js@1.11.0/dist/";
 
         try {
-            // sqlite3.js загружен через <script> в HTML
-            // и создаёт глобальную функцию sqlite3InitModule
-            if (typeof sqlite3InitModule !== "function") {
-                throw new Error("SQLite Wasm не загрузился. Проверьте интернет-соединение.");
+            // Ждём, пока initSqlJs появится в window (загружен через <script>)
+            if (typeof initSqlJs !== "function") {
+                console.log("⏳ Ожидание загрузки sql.js...");
+                await new Promise((resolve, reject) => {
+                    const check = () => {
+                        if (typeof initSqlJs === "function") return resolve();
+                        setTimeout(check, 100);
+                    };
+                    setTimeout(() => reject(new Error("sql.js не загрузился за 30 секунд")), 30000);
+                    check();
+                });
             }
 
-            const sqlite3 = await sqlite3InitModule();
-            this.sqlite3 = sqlite3;
+            const SQL = await initSqlJs({
+                locateFile: file => SQL_URL + file
+            });
+            this.SQL = SQL;
 
-            // Пытаемся открыть БД в OPFS
+            // Пытаемся загрузить существующую БД с диска
+            let savedData = null;
+
+            // 1. Пробуем OPFS
             if ("storage" in navigator && "getDirectory" in navigator.storage) {
                 try {
                     const root = await navigator.storage.getDirectory();
-                    // Проверяем, можем ли открыть OPFS
-                    await root.getFileHandle("test_opfs", { create: true });
-                    this.db = new sqlite3.oo1.OpfsDb("/tracker.db");
-                    console.log("✅ SQLite: OPFS mode (данные на диске)");
+                    const fileHandle = await root.getFileHandle("tracker.db", { create: false });
+                    const file = await fileHandle.getFile();
+                    savedData = new Uint8Array(await file.arrayBuffer());
+                    console.log("📂 Загружено из OPFS");
                 } catch (e) {
-                    console.warn("OPFS не доступен, fallback на память:", e.message);
-                    this.db = new sqlite3.oo1.DB("/memory/tracker.db", "c");
-                    this._isMemory = true;
+                    // Файла ещё нет — нормально
                 }
-            } else {
-                console.warn("OPFS не поддерживается браузером, fallback на память");
-                this.db = new sqlite3.oo1.DB("/memory/tracker.db", "c");
-                this._isMemory = true;
             }
 
-            // Включаем внешние ключи
-            this.db.exec("PRAGMA foreign_keys = ON;");
+            // 2. Fallback на localStorage
+            if (!savedData) {
+                const local = localStorage.getItem("tracker_db");
+                if (local) {
+                    try {
+                        const binary = atob(local);
+                        const bytes = new Uint8Array(binary.length);
+                        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                        savedData = bytes;
+                        console.log("📂 Загружено из localStorage");
+                    } catch (e) {}
+                }
+            }
+
+            // Открываем БД (с данными или пустую)
+            if (savedData) {
+                this.db = new SQL.Database(savedData);
+            } else {
+                this.db = new SQL.Database();
+            }
 
             // Создаём таблицы
             this._createTables();
@@ -48,16 +76,13 @@ const DB = {
             // Загружаем текущего пользователя
             const savedId = localStorage.getItem("current_user_id");
             if (savedId) {
-                const rows = this.db.exec({
-                    sql: "SELECT * FROM users WHERE id = ?",
-                    bind: [parseInt(savedId)],
-                    returnValue: "resultRows",
-                });
+                const rows = this.all("SELECT * FROM users WHERE id = ?", [parseInt(savedId)]);
                 if (rows.length > 0) {
                     this.currentUser = rows[0];
                 }
             }
 
+            console.log("✅ SQLite (sql.js) инициализирован");
             return true;
         } catch (e) {
             console.error("❌ SQLite init error:", e);
@@ -72,7 +97,6 @@ const DB = {
                 username TEXT UNIQUE NOT NULL,
                 created_at TEXT DEFAULT (datetime('now','localtime'))
             )`,
-
             `CREATE TABLE IF NOT EXISTS entries (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL REFERENCES users(id),
@@ -90,7 +114,6 @@ const DB = {
                 updated_at TEXT DEFAULT (datetime('now','localtime')),
                 UNIQUE(user_id, date)
             )`,
-
             `CREATE TABLE IF NOT EXISTS custom_columns (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL REFERENCES users(id),
@@ -99,7 +122,6 @@ const DB = {
                 sort_order INTEGER DEFAULT 0,
                 created_at TEXT DEFAULT (datetime('now','localtime'))
             )`,
-
             `CREATE TABLE IF NOT EXISTS entry_column_values (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 column_id INTEGER NOT NULL REFERENCES custom_columns(id) ON DELETE CASCADE,
@@ -107,7 +129,6 @@ const DB = {
                 value TEXT NOT NULL,
                 UNIQUE(column_id, entry_id)
             )`,
-
             `CREATE TABLE IF NOT EXISTS first_aid_items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL REFERENCES users(id),
@@ -122,7 +143,6 @@ const DB = {
                 created_at TEXT DEFAULT (datetime('now','localtime')),
                 updated_at TEXT DEFAULT (datetime('now','localtime'))
             )`,
-
             `CREATE TABLE IF NOT EXISTS first_aid_usages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 item_id INTEGER NOT NULL REFERENCES first_aid_items(id) ON DELETE CASCADE,
@@ -132,31 +152,55 @@ const DB = {
                 note TEXT
             )`,
         ];
-
         for (const stmt of statements) {
-            try {
-                this.db.exec(stmt);
-            } catch (e) {
-                console.warn("Table creation:", e.message);
-            }
+            try { this.db.run(stmt); } catch (e) { console.warn("Table:", e.message); }
         }
     },
 
-    // --- SQL методы ---
+    // --- Сохранение БД на диск ---
+
+    _save: async function () {
+        this._dirty = true;
+        if (this._saveTimer) return;
+        this._saveTimer = setTimeout(async () => {
+            try {
+                const data = this.db.export();
+                // 1. OPFS
+                if ("storage" in navigator && "getDirectory" in navigator.storage) {
+                    try {
+                        const root = await navigator.storage.getDirectory();
+                        const fileHandle = await root.getFileHandle("tracker.db", { create: true });
+                        const accessHandle = await fileHandle.createSyncAccessHandle();
+                        accessHandle.truncate(0);
+                        accessHandle.write(data);
+                        accessHandle.flush();
+                        accessHandle.close();
+                        this._dirty = false;
+                        this._saveTimer = null;
+                        return;
+                    } catch (e) {
+                        // OPFS не сработал — fallback
+                    }
+                }
+                // 2. localStorage (только до ~5MB)
+                const binary = btoa(String.fromCharCode(...new Uint8Array(data)));
+                localStorage.setItem("tracker_db", binary);
+                this._dirty = false;
+            } catch (e) {
+                console.error("Save error:", e);
+            }
+            this._saveTimer = null;
+        }, 500); // Debounce 500ms
+    },
+
+    // --- SQL методы (адаптированы под sql.js) ---
 
     run: function (sql, params = []) {
         try {
-            this.db.exec({
-                sql: sql,
-                bind: params.map(p => p === undefined ? null : p),
-                returnValue: "resultRows",
-            });
+            this.db.run(sql, params.map(p => p === undefined ? null : p));
+            this._save();
             if (sql.trim().toUpperCase().startsWith("INSERT")) {
-                const rows = this.db.exec({
-                    sql: "SELECT last_insert_rowid() as id",
-                    bind: [],
-                    returnValue: "resultRows",
-                });
+                const rows = this._execRaw("SELECT last_insert_rowid() as id");
                 return rows.length > 0 ? rows[0].id : null;
             }
             return true;
@@ -167,28 +211,26 @@ const DB = {
     },
 
     get: function (sql, params = []) {
-        try {
-            const rows = this.db.exec({
-                sql: sql,
-                bind: params.map(p => p === undefined ? null : p),
-                returnValue: "resultRows",
-            });
-            return rows.length > 0 ? rows[0] : null;
-        } catch (e) {
-            console.error("DB get:", e.message, sql);
-            return null;
-        }
+        const rows = this.all(sql, params);
+        return rows.length > 0 ? rows[0] : null;
     },
 
     all: function (sql, params = []) {
+        return this._execRaw(sql, params);
+    },
+
+    _execRaw: function (sql, params = []) {
         try {
-            return this.db.exec({
-                sql: sql,
-                bind: params.map(p => p === undefined ? null : p),
-                returnValue: "resultRows",
-            });
+            const stmt = this.db.prepare(sql);
+            if (params.length > 0) stmt.bind(params.map(p => p === undefined ? null : p));
+            const rows = [];
+            while (stmt.step()) {
+                rows.push(stmt.getAsObject());
+            }
+            stmt.free();
+            return rows;
         } catch (e) {
-            console.error("DB all:", e.message, sql);
+            console.error("DB query:", e.message, sql);
             return [];
         }
     },
@@ -197,10 +239,7 @@ const DB = {
 
     seedFirstAid: function () {
         if (!this.currentUser) return;
-        const rows = this.all(
-            "SELECT COUNT(*) as cnt FROM first_aid_items WHERE user_id = ?",
-            [this.currentUser.id]
-        );
+        const rows = this.all("SELECT COUNT(*) as cnt FROM first_aid_items WHERE user_id = ?", [this.currentUser.id]);
         if (rows.length > 0 && rows[0].cnt > 0) return;
 
         const seed = [

@@ -1,12 +1,10 @@
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import RedirectResponse
 from pathlib import Path
 
 app = FastAPI(title="Трекер автогуманиста (локальный)")
 
-# Монтируем статику
 static_dir = Path(__file__).parent / "app" / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
