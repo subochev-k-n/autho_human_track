@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -139,3 +139,72 @@ class CalendarDay(BaseModel):
     date: date
     avg_score: Optional[float] = None
     filled: bool
+
+
+# === First Aid schemas ===
+
+class FirstAidItemCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    category: str = Field(...)  # fatigue, apathy, anxiety, negativity
+    action_type: str = Field(...)  # instant, tactical, daily
+    time_cost: str = Field(default="", max_length=50)
+    duration: str = Field(default="", max_length=50)
+    feelings: Optional[str] = Field(None, max_length=1000)
+
+
+class FirstAidItemUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    category: Optional[str] = None
+    action_type: Optional[str] = None
+    time_cost: Optional[str] = Field(None, max_length=50)
+    duration: Optional[str] = Field(None, max_length=50)
+    feelings: Optional[str] = Field(None, max_length=1000)
+    is_active: Optional[bool] = None
+    sort_order: Optional[int] = None
+
+
+class FirstAidItemOut(BaseModel):
+    id: int
+    title: str
+    category: str
+    action_type: str
+    time_cost: str
+    duration: str
+    feelings: Optional[str] = None
+    is_active: bool
+    sort_order: int
+    usage_count: int = 0
+    avg_effectiveness: Optional[float] = None
+
+    model_config = {"from_attributes": True}
+
+
+class FirstAidUsageCreate(BaseModel):
+    item_id: int
+    effectiveness: Optional[int] = Field(None, ge=1, le=5)
+    note: Optional[str] = Field(None, max_length=500)
+
+
+class FirstAidUsageUpdate(BaseModel):
+    effectiveness: Optional[int] = Field(None, ge=1, le=5)
+    note: Optional[str] = Field(None, max_length=500)
+
+
+class FirstAidUsageOut(BaseModel):
+    id: int
+    item_id: int
+    user_id: int
+    used_at: datetime
+    effectiveness: Optional[int] = None
+    note: Optional[str] = None
+    item_title: str = ""
+    item_category: str = ""
+
+    model_config = {"from_attributes": True}
+
+
+class FirstAidStatsOut(BaseModel):
+    total_items: int
+    total_usages: int
+    top_items: list[dict] = []
+    avg_effectiveness: Optional[float] = None

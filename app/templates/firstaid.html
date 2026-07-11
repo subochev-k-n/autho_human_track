@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f0f1a">
+    <title>Трекер автогуманиста — Аптечка</title>
+    <link rel="manifest" href="/static/pwa/site.webmanifest">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h1 style="font-size:1.3rem;">🩹 Аптечка</h1>
+            <a href="/firstaid/edit" class="btn btn-primary btn-small" style="width:auto;">+ Новый</a>
+        </div>
+
+        <!-- Случайный допинг -->
+        <div class="card" id="random-card" style="cursor:pointer;text-align:center;" onclick="pickRandom()">
+            <div id="random-content">
+                <div style="font-size:2.5rem;margin-bottom:8px;">🎲</div>
+                <div style="font-size:0.95rem;color:var(--text-muted);">Нажмите, чтобы получить случайный допинг</div>
+            </div>
+        </div>
+
+        <!-- Фильтры -->
+        <div class="card" style="padding:12px;">
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px;">Категория:</div>
+            <div class="period-selector" id="category-filters">
+                <button class="btn btn-outline btn-small active" data-value="">Все</button>
+                <button class="btn btn-outline btn-small" data-value="fatigue" style="border-color:#fbbf24;color:#fbbf24;">🏋️ Усталость</button>
+                <button class="btn btn-outline btn-small" data-value="apathy" style="border-color:#fb923c;color:#fb923c;">🌪 Апатия</button>
+                <button class="btn btn-outline btn-small" data-value="anxiety" style="border-color:#4ade80;color:#4ade80;">🧘 Тревога</button>
+                <button class="btn btn-outline btn-small" data-value="negativity" style="border-color:#60a5fa;color:#60a5fa;">💆 Негатив</button>
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:10px;margin-bottom:6px;">Тип:</div>
+            <div class="period-selector" id="type-filters">
+                <button class="btn btn-outline btn-small active" data-value="">Все</button>
+                <button class="btn btn-outline btn-small" data-value="instant">⚡ Моментальный</button>
+                <button class="btn btn-outline btn-small" data-value="tactical">🎯 Тактический</button>
+                <button class="btn btn-outline btn-small" data-value="daily">🌙 Дневной</button>
+            </div>
+        </div>
+
+        <!-- Список допингов -->
+        <div id="items-list"></div>
+
+        <!-- Ошибка -->
+        <div id="error-display" class="alert alert-error hidden"></div>
+    </div>
+
+    <!-- Модалка «Использовал» -->
+    <div id="usage-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>✅ Отлично!</h2>
+            <p style="color:var(--text-muted);margin-bottom:16px;">Как оцениваете эффект?</p>
+            <div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;">
+                <button class="btn btn-small" data-rating="1" style="background:#2a2a45;flex:1;min-width:44px;">1</button>
+                <button class="btn btn-small" data-rating="2" style="background:#2a2a45;flex:1;min-width:44px;">2</button>
+                <button class="btn btn-small" data-rating="3" style="background:#2a2a45;flex:1;min-width:44px;">3</button>
+                <button class="btn btn-small" data-rating="4" style="background:#2a2a45;flex:1;min-width:44px;">4</button>
+                <button class="btn btn-small" data-rating="5" style="background:#2a2a45;flex:1;min-width:44px;">5</button>
+            </div>
+            <div class="form-group">
+                <input type="text" id="usage-note" placeholder="Заметка (необязательно)" style="width:100%;padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:0.9rem;">
+            </div>
+            <div style="display:flex;gap:8px;">
+                <button class="btn btn-primary" id="usage-save" style="flex:1;">Сохранить</button>
+                <button class="btn btn-outline" id="usage-skip" style="flex:1;">Без оценки</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Нижняя навигация -->
+    <nav class="bottom-nav">
+        <a href="/dashboard">
+            <span class="nav-icon">📊</span>
+            <span>Главная</span>
+        </a>
+        <a href="/entries">
+            <span class="nav-icon">📋</span>
+            <span>Записи</span>
+        </a>
+        <a href="/firstaid" class="active">
+            <span class="nav-icon">🩹</span>
+            <span>Аптечка</span>
+        </a>
+        <a href="/settings">
+            <span class="nav-icon">⚙️</span>
+            <span>Настройки</span>
+        </a>
+        <a href="#" onclick="logout()">
+            <span class="nav-icon">🚪</span>
+            <span>Выход</span>
+        </a>
+    </nav>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/firstaid.js"></script>
+</body>
+</html>

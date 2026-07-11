@@ -4,16 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0f0f1a">
-    <title>Трекер автогуманиста — Записи</title>
+    <title>Трекер автогуманиста — История аптечки</title>
     <link rel="manifest" href="/static/pwa/site.webmanifest">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <!-- Напоминание -->
-    <div id="reminder-banner" class="container hidden" style="padding-bottom:0;"></div>
-
     <div class="container">
-        <h1 style="font-size:1.3rem;margin-bottom:16px;">📋 Все записи</h1>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h1 style="font-size:1.3rem;">📋 История аптечки</h1>
+            <a href="/firstaid" class="btn btn-outline btn-small" style="width:auto;">← Назад</a>
+        </div>
+
+        <!-- Статистика -->
+        <div id="stats-card" class="card hidden">
+            <div class="stats-grid" id="stats-grid" style="grid-template-columns:1fr 1fr 1fr;">
+                <div class="stat-item"><div class="stat-label">Всего допингов</div><div class="stat-value" id="stat-items">0</div></div>
+                <div class="stat-item"><div class="stat-label">Использований</div><div class="stat-value" id="stat-usages">0</div></div>
+                <div class="stat-item"><div class="stat-label">Средний эффект</div><div class="stat-value" id="stat-effect">—</div></div>
+            </div>
+        </div>
 
         <!-- Фильтры -->
         <div class="card" style="padding:16px;">
@@ -28,65 +37,32 @@
                 </div>
                 <div style="display:flex;align-items:flex-end;gap:4px;">
                     <button class="btn btn-primary btn-small" id="filter-apply" style="min-height:44px;">Применить</button>
-                    <button class="btn btn-outline btn-small" id="filter-reset" style="min-height:44px;">Сброс</button>
                 </div>
             </div>
         </div>
 
-        <!-- Таблица -->
+        <!-- Таблица истории -->
         <div class="card" style="overflow:hidden;padding:0;">
             <div class="table-container">
-                <table id="entries-table">
+                <table>
                     <thead>
                         <tr>
                             <th>Дата</th>
-                            <th>День</th>
-                            <th>Эн</th>
-                            <th>Ко</th>
-                            <th>Пр</th>
-                            <th>Вз</th>
-                            <th>Су</th>
-                            <th>Я</th>
-                            <th>День</th>
-                            <th>Соб</th>
+                            <th>Допинг</th>
+                            <th>Категория</th>
+                            <th>Оценка</th>
+                            <th>Заметка</th>
                         </tr>
                     </thead>
-                    <tbody id="entries-body">
-                        <tr><td colspan="10" class="empty">Загрузка...</td></tr>
+                    <tbody id="history-body">
+                        <tr><td colspan="5" class="empty">Загрузка...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
-
-        <!-- Пагинация -->
-        <div id="pagination" style="display:flex;justify-content:center;gap:8px;margin-top:16px;"></div>
     </div>
 
-    <!-- Нижняя навигация -->
-    <nav class="bottom-nav">
-        <a href="/dashboard">
-            <span class="nav-icon">📊</span>
-            <span>Главная</span>
-        </a>
-        <a href="/entries" class="active">
-            <span class="nav-icon">📋</span>
-            <span>Записи</span>
-        </a>
-        <a href="/firstaid">
-            <span class="nav-icon">🩹</span>
-            <span>Аптечка</span>
-        </a>
-        <a href="/settings">
-            <span class="nav-icon">⚙️</span>
-            <span>Настройки</span>
-        </a>
-        <a href="#" onclick="logout()">
-            <span class="nav-icon">🚪</span>
-            <span>Выход</span>
-        </a>
-    </nav>
-
     <script src="/static/js/api.js"></script>
-    <script src="/static/js/entries.js"></script>
+    <script src="/static/js/firstaid.js"></script>
 </body>
 </html>

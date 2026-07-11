@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f0f1a">
+    <title>Трекер автогуманиста — Редактировать допинг</title>
+    <link rel="manifest" href="/static/pwa/site.webmanifest">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1 style="font-size:1.3rem;margin-bottom:16px;" id="form-title">✏️ Новый допинг</h1>
+
+        <div id="edit-error" class="alert alert-error hidden"></div>
+
+        <form id="edit-form" class="card">
+            <div class="form-group">
+                <label for="fa-title">Название действия</label>
+                <input type="text" id="fa-title" required maxlength="200" placeholder="Например: Почесать коту пузико">
+            </div>
+
+            <div class="form-group">
+                <label for="fa-category">Категория воздействия</label>
+                <select id="fa-category" style="width:100%;padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:1rem;min-height:44px;">
+                    <option value="fatigue">🏋️ Снижает усталость</option>
+                    <option value="apathy">🌪 Снимает апатию/скуку</option>
+                    <option value="anxiety">🧘 Убирает тревогу</option>
+                    <option value="negativity">💆 Снижает негатив</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="fa-action-type">Тип действия</label>
+                <select id="fa-action-type" style="width:100%;padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:1rem;min-height:44px;">
+                    <option value="instant">⚡ Моментальный (1-2 мин, эффект 15-60 мин)</option>
+                    <option value="tactical">🎯 Тактический (3-10 мин, эффект 2-4 ч)</option>
+                    <option value="daily">🌙 Дневной (15-60 мин, эффект вечер/ночь)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="fa-time-cost">Затраты времени</label>
+                <input type="text" id="fa-time-cost" maxlength="50" placeholder="Например: 1-2 минуты">
+            </div>
+
+            <div class="form-group">
+                <label for="fa-duration">Длительность эффекта</label>
+                <input type="text" id="fa-duration" maxlength="50" placeholder="Например: 15-60 минут">
+            </div>
+
+            <div class="form-group">
+                <label for="fa-feelings">Мои ощущения (якорь) <span style="color:var(--text-muted);font-size:0.8rem;">— необязательно</span></label>
+                <textarea id="fa-feelings" rows="4" style="width:100%;padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:inherit;font-size:0.9rem;resize:vertical;" maxlength="1000" placeholder="Опишите ощущения — это создаёт якорь и усиливает эффект"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <a href="/firstaid" class="btn btn-outline mt-8" style="display:block;text-align:center;">← Назад</a>
+        </form>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/firstaid.js"></script>
+</body>
+</html>

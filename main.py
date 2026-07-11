@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from app.config import settings, set_test_mode as _set_test_mode, get_test_mode
 from app.database import Base, SessionLocal, engine
-from app.routers import auth, columns, entries
+from app.routers import auth, columns, entries, firstaid
 from app.services.auth_service import get_password_hash
 
 app = FastAPI(title="Трекер автогуманиста")
@@ -31,6 +31,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(entries.router, prefix="/api/entries", tags=["entries"])
 app.include_router(columns.router, prefix="/api/columns", tags=["columns"])
+app.include_router(firstaid.router, prefix="/api/firstaid", tags=["firstaid"])
 
 
 @app.on_event("startup")
@@ -51,6 +52,56 @@ def on_startup():
             db.commit()
     finally:
         db.close()
+
+    # Создать стартовые допинги для admin, если ещё нет
+    db2 = SessionLocal()
+    try:
+        from app.models import FirstAidItem, FirstAidCategory, FirstAidActionType
+        admin_user = db2.query(User).filter(User.username == "admin").first()
+        if admin_user:
+            existing = db2.query(FirstAidItem).filter(FirstAidItem.user_id == admin_user.id).count()
+            if existing == 0:
+                starter_dopings = [
+                    {"title": "Замедленное дыхание: удлинённый выдох",
+                     "category": FirstAidCategory.ANXIETY, "action_type": FirstAidActionType.INSTANT,
+                     "time_cost": "1-2 минуты", "duration": "15-60 минут",
+                     "feelings": "Выдох на 6-8 счетов при вдохе на 4 — тело получает сигнал, что опасность прошла. Через несколько циклов приходит спокойствие."},
+                    {"title": "Удар холода: лёд к лицу или запястьям",
+                     "category": FirstAidCategory.ANXIETY, "action_type": FirstAidActionType.INSTANT,
+                     "time_cost": "1-2 минуты", "duration": "15-30 минут",
+                     "feelings": "Холод резко переключает нервную систему. Паника отступает почти мгновенно, дыхание выравнивается."},
+                    {"title": "Тряска конечностями",
+                     "category": FirstAidCategory.FATIGUE, "action_type": FirstAidActionType.INSTANT,
+                     "time_cost": "30-60 секунд", "duration": "10-30 минут",
+                     "feelings": "Физическое встряхивание рук и ног сбрасывает нереализованное мышечное возбуждение. После ощущение лёгкости в теле."},
+                    {"title": "Обратный счёт: 5-4-3-2-1",
+                     "category": FirstAidCategory.ANXIETY, "action_type": FirstAidActionType.INSTANT,
+                     "time_cost": "1-2 минуты", "duration": "15-30 минут",
+                     "feelings": "5 предметов вокруг, 4 звука, 3 тактильных ощущения, 2 запаха, 1 цвет. Возвращает из внутреннего мира в реальность, фокус переключается."},
+                    {"title": "Мышечный сброс: напряжение-расслабление",
+                     "category": FirstAidCategory.NEGATIVITY, "action_type": FirstAidActionType.INSTANT,
+                     "time_cost": "1 минута", "duration": "15-30 минут",
+                     "feelings": "Сильно напрячь всё тело на 5 секунд, затем резко расслабить. При упадке — поднимает тонус, при стрессе — успокаивает."},
+                    {"title": "Яркий вкус: имбирь, мята, гвоздика",
+                     "category": FirstAidCategory.APATHY, "action_type": FirstAidActionType.INSTANT,
+                     "time_cost": "1-2 минуты", "duration": "15-30 минут",
+                     "feelings": "Резкий вкус отвлекает от зацикленных мыслей. Пробуждение вкусовых рецепторов встряхивает и возвращает в тело."},
+                ]
+                for i, sd in enumerate(starter_dopings):
+                    item = FirstAidItem(
+                        user_id=admin_user.id,
+                        title=sd["title"],
+                        category=sd["category"],
+                        action_type=sd["action_type"],
+                        time_cost=sd["time_cost"],
+                        duration=sd["duration"],
+                        feelings=sd["feelings"],
+                        sort_order=i,
+                    )
+                    db2.add(item)
+                db2.commit()
+    finally:
+        db2.close()
 
 
 # --- HTML страницы ---
@@ -79,6 +130,21 @@ def entries_page(request: Request):
 @app.get("/settings")
 def settings_page(request: Request):
     return templates.TemplateResponse("settings.html", {"request": request})
+
+
+@app.get("/firstaid")
+def firstaid_page(request: Request):
+    return templates.TemplateResponse("firstaid.html", {"request": request})
+
+
+@app.get("/firstaid/edit")
+def firstaid_edit_page(request: Request, id: int | None = None):
+    return templates.TemplateResponse("firstaid_edit.html", {"request": request, "edit_id": id})
+
+
+@app.get("/firstaid/history")
+def firstaid_history_page(request: Request):
+    return templates.TemplateResponse("firstaid_history.html", {"request": request})
 
 
 # --- API-only endpoints ---

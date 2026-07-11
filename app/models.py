@@ -30,6 +30,8 @@ class User(Base):
 
     entries = relationship("Entry", back_populates="user", cascade="all, delete-orphan")
     custom_columns = relationship("CustomColumn", back_populates="user", cascade="all, delete-orphan")
+    first_aid_items = relationship("FirstAidItem", back_populates="user", cascade="all, delete-orphan")
+    first_aid_usages = relationship("FirstAidUsage", back_populates="user", cascade="all, delete-orphan")
 
 
 class Entry(Base):
@@ -61,6 +63,53 @@ class Entry(Base):
 class ColumnType(str, enum.Enum):
     RATING = "rating"
     TEXT = "text"
+
+
+class FirstAidCategory(str, enum.Enum):
+    FATIGUE = "fatigue"
+    APATHY = "apathy"
+    ANXIETY = "anxiety"
+    NEGATIVITY = "negativity"
+
+
+class FirstAidActionType(str, enum.Enum):
+    INSTANT = "instant"
+    TACTICAL = "tactical"
+    DAILY = "daily"
+
+
+class FirstAidItem(Base):
+    __tablename__ = "first_aid_items"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String(200), nullable=False)
+    category = Column(Enum(FirstAidCategory), nullable=False)
+    action_type = Column(Enum(FirstAidActionType), nullable=False)
+    time_cost = Column(String(50), default="")
+    duration = Column(String(50), default="")
+    feelings = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+    sort_order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="first_aid_items")
+    usages = relationship("FirstAidUsage", back_populates="item", cascade="all, delete-orphan")
+
+
+class FirstAidUsage(Base):
+    __tablename__ = "first_aid_usages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    item_id = Column(Integer, ForeignKey("first_aid_items.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    used_at = Column(DateTime, default=datetime.utcnow)
+    effectiveness = Column(Integer, nullable=True)
+    note = Column(Text, nullable=True)
+
+    user = relationship("User", back_populates="first_aid_usages")
+    item = relationship("FirstAidItem", back_populates="usages")
 
 
 class CustomColumn(Base):
