@@ -90,6 +90,12 @@ const DB = {
             }
 
             console.log("✅ SQLite (sql.js) инициализирован");
+
+            // Сохраняем БД при закрытии страницы
+            window.addEventListener("beforeunload", () => {
+                if (this.db) this._save();
+            });
+
             return true;
         } catch (e) {
             console.error("❌ SQLite init error:", e);
@@ -164,40 +170,39 @@ const DB = {
         }
     },
 
-    // --- Сохранение БД на диск ---
+    // --- Сохранение БД на диск (синхронное) ---
 
-    _save: async function () {
-        this._dirty = true;
-        if (this._saveTimer) return;
-        this._saveTimer = setTimeout(async () => {
-            try {
-                const data = this.db.export();
-                // 1. OPFS
-                if ("storage" in navigator && "getDirectory" in navigator.storage) {
-                    try {
-                        const root = await navigator.storage.getDirectory();
-                        const fileHandle = await root.getFileHandle("tracker.db", { create: true });
-                        const accessHandle = await fileHandle.createSyncAccessHandle();
-                        accessHandle.truncate(0);
-                        accessHandle.write(data);
-                        accessHandle.flush();
-                        accessHandle.close();
-                        this._dirty = false;
-                        this._saveTimer = null;
-                        return;
-                    } catch (e) {
-                        // OPFS не сработал — fallback
-                    }
-                }
-                // 2. localStorage (только до ~5MB)
-                const binary = btoa(String.fromCharCode(...new Uint8Array(data)));
-                localStorage.setItem("tracker_db", binary);
-                this._dirty = false;
-            } catch (e) {
-                console.error("Save error:", e);
+    _save: function () {
+        try {
+            const data = this.db.export();
+            const bytes = new Uint8Array(data);
+            let binary = "";
+            const chunkSize = 8192;
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+                binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
             }
-            this._saveTimer = null;
-        }, 500); // Debounce 500ms
+            binary = btoa(binary);
+            localStorage.setItem("tracker_db", binary);
+        } catch (e) {
+            console.warn("Save error:", e);
+        }
+    },
+
+    // Асинхронное сохранение в OPFS (если доступен) — поверх localStorage
+    _saveOpfs: async function () {
+        if (!("storage" in navigator && "getDirectory" in navigator.storage)) return;
+        try {
+            const data = this.db.export();
+            const root = await navigator.storage.getDirectory();
+            const fileHandle = await root.getFileHandle("tracker.db", { create: true });
+            const accessHandle = await fileHandle.createSyncAccessHandle();
+            accessHandle.truncate(0);
+            accessHandle.write(data);
+            accessHandle.flush();
+            accessHandle.close();
+        } catch (e) {
+            // OPFS не обязателен — localStorage достаточно
+        }
     },
 
     // --- SQL методы (адаптированы под sql.js) ---
@@ -205,7 +210,9 @@ const DB = {
     run: function (sql, params = []) {
         try {
             this.db.run(sql, params.map(p => p === undefined ? null : p));
-            this._save();
+            this._save();  // синхронное сохранение в localStorage
+            // OPFS — асинхронно, не блокирует
+            this._saveTimer = this._saveTimer || setTimeout(() => { this._saveTimer = null; this._saveOpfs(); }, 1000);
             if (sql.trim().toUpperCase().startsWith("INSERT")) {
                 const rows = this._execRaw("SELECT last_insert_rowid() as id");
                 return rows.length > 0 ? rows[0].id : null;

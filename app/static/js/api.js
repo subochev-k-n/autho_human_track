@@ -369,6 +369,9 @@ const API = {
     },
 
     _firstAidItems: function (path, method, body) {
+        if (!DB.currentUser) {
+            return Promise.reject(new Error("Пользователь не авторизован"));
+        }
         if (method === "GET") {
             if (path.includes("/random")) {
                 // random
