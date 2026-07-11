@@ -57,7 +57,8 @@ const DB = {
                         console.log("📂 Загружено из localStorage (" + arr.length + " байт)");
                     }
                 } catch (e) {
-                    console.warn("Ошибка загрузки из localStorage, стартуем чистую БД");
+                    console.warn("Ошибка загрузки из localStorage, чистим и стартуем заново");
+                    localStorage.removeItem("tracker_db");
                 }
             }
 
