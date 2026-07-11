@@ -27,3 +27,6 @@ Thumbs.db
 
 # Server logs
 server.log
+
+# Railway
+.env.production

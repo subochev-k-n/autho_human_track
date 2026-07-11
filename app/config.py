@@ -1,8 +1,13 @@
+import os
+
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "sqlite:///./tracker.db"
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL",
+        "sqlite:///./tracker.db",
+    )
     SECRET_KEY: str = "change-this-secret-key-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
@@ -15,6 +20,14 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Если Railway передал PostgreSQL — оставляем как есть,
+# иначе используем SQLite (для локальной разработки)
+if settings.DATABASE_URL and settings.DATABASE_URL.startswith("postgres"):
+    # Railway использует postgres://, но SQLAlchemy ждёт postgresql://
+    settings.DATABASE_URL = settings.DATABASE_URL.replace(
+        "postgres://", "postgresql://", 1
+    )
 
 # --- Тестовый режим (переопределяется через API, не влияет на .env) ---
 
