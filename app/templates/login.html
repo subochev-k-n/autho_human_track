@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f0f1a">
+    <title>Трекер автогуманиста — Вход</title>
+    <link rel="manifest" href="/static/pwa/site.webmanifest">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="apple-touch-icon" href="/static/pwa/icon-192.png">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-logo">📊</div>
+        <h1>Трекер автогуманиста</h1>
+        <p class="subtitle">Ежедневный дневник самооценки</p>
+
+        <div class="auth-card card">
+            <h2>Вход</h2>
+            <div id="login-error" class="alert alert-error hidden"></div>
+
+            {% if request.query_params.get('registered') %}
+            <div class="alert alert-success">Регистрация успешна! Войдите в систему.</div>
+            {% endif %}
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Имя пользователя</label>
+                    <input type="text" id="username" name="username" required autocomplete="username" placeholder="Ваше имя">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Ваш пароль">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Войти</button>
+            </form>
+
+            <div class="auth-footer">
+                Нет аккаунта? <a href="/register">Зарегистрироваться</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/auth.js"></script>
+</body>
+</html>

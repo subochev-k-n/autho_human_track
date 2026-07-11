@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f0f1a">
+    <title>Трекер автогуманиста — Настройки</title>
+    <link rel="manifest" href="/static/pwa/site.webmanifest">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Напоминание -->
+    <div id="reminder-banner" class="container hidden" style="padding-bottom:0;"></div>
+
+    <div class="container">
+        <h1 style="font-size:1.3rem;margin-bottom:16px;">⚙️ Настройки</h1>
+
+        <!-- Кастомные колонки -->
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h2 style="margin:0;">Дополнительные сферы</h2>
+                <button class="btn btn-primary btn-small" id="add-column-btn" style="width:auto;">+ Добавить</button>
+            </div>
+
+            <div id="column-error" class="alert alert-error hidden"></div>
+
+            <ul id="column-list" class="column-list"></ul>
+
+            <p style="color:var(--text-muted);font-size:0.8rem;margin-top:12px;">
+                💡 Перетаскивайте колонки, чтобы изменить их порядок
+            </p>
+        </div>
+
+        <!-- Информация -->
+        <div class="card">
+            <h2>ℹ️ О трекере</h2>
+            <p style="color:var(--text-muted);font-size:0.9rem;">
+                Версия 1.0. Все данные хранятся локально и доступны только вам.
+            </p>
+        </div>
+    </div>
+
+    <!-- Модальное окно добавления колонки -->
+    <div id="add-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>Новая сфера</h2>
+            <div id="modal-error" class="alert alert-error hidden"></div>
+
+            <div class="form-group">
+                <label for="modal-name">Название</label>
+                <input type="text" id="modal-name" maxlength="100" placeholder="Например: Семья">
+            </div>
+
+            <div class="form-group">
+                <label for="modal-type">Тип</label>
+                <select id="modal-type" style="width:100%;padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:1rem;min-height:44px;">
+                    <option value="rating">Оценка (от -10 до +10)</option>
+                    <option value="text">Текст</option>
+                </select>
+            </div>
+
+            <div style="display:flex;gap:8px;">
+                <button class="btn btn-primary" id="modal-save">Добавить</button>
+                <button class="btn btn-outline" id="modal-cancel">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Нижняя навигация -->
+    <nav class="bottom-nav">
+        <a href="/dashboard">
+            <span class="nav-icon">📊</span>
+            <span>Главная</span>
+        </a>
+        <a href="/entries">
+            <span class="nav-icon">📋</span>
+            <span>Записи</span>
+        </a>
+        <a href="/settings" class="active">
+            <span class="nav-icon">⚙️</span>
+            <span>Настройки</span>
+        </a>
+        <a href="#" onclick="logout()">
+            <span class="nav-icon">🚪</span>
+            <span>Выход</span>
+        </a>
+    </nav>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/settings.js"></script>
+</body>
+</html>

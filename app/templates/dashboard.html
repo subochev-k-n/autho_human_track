@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f0f1a">
+    <title>Трекер автогуманиста</title>
+    <link rel="manifest" href="/static/pwa/site.webmanifest">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Напоминание -->
+    <div id="reminder-banner" class="container hidden" style="padding-bottom:0;">
+        <div class="reminder-banner">
+            <p>📝 Сегодня ещё не заполнено. Внесите оценку дня.</p>
+            <a href="/dashboard" class="btn btn-primary" style="max-width:280px;">Заполнить сегодня</a>
+        </div>
+    </div>
+
+    <div class="container" id="app">
+        <!-- Режим А: До 18:00 -->
+        <div id="mode-blocked" class="hidden">
+            <div class="block-overlay">
+                <div class="block-icon">🌙</div>
+                <h2>Оценки пока недоступны</h2>
+                <p>Оценки за сегодняшний день можно внести после 18:00.</p>
+                <p class="mt-8" style="font-size:0.85rem;color:var(--text-muted);">
+                    Дневной трекер заполняется вечером, чтобы подвести итог дня.
+                </p>
+            </div>
+        </div>
+
+        <!-- Режим Б: После 18:00, запись не внесена -->
+        <div id="mode-form" class="hidden">
+            <h1 style="font-size:1.3rem;margin-bottom:16px;">📝 Оценка дня<br>
+                <span style="font-size:0.9rem;color:var(--text-muted);" id="form-date"></span>
+            </h1>
+
+            <div id="form-error" class="alert alert-error hidden"></div>
+
+            <form id="entry-form">
+                <div id="sliders-container"></div>
+
+                <!-- Поле Событие (опционально) -->
+                <div class="form-group">
+                    <label for="event">Событие дня <span style="color:var(--text-muted);font-size:0.8rem;">(опционально, рекомендуется не заполнять первые 3-4 месяца)</span></label>
+                    <textarea id="event" rows="3" style="width:100%;padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:inherit;font-size:0.9rem;resize:vertical;min-height:44px;" placeholder="1-2 наиболее значимых события дня — без оценок, только факты"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="form-submit-btn">Сохранить</button>
+            </form>
+        </div>
+
+        <!-- Режим В: После 18:00, запись внесена -->
+        <div id="mode-view" class="hidden">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h1 style="font-size:1.2rem;">📊 Сегодняшняя оценка</h1>
+                <span class="today-badge filled">✓ Сегодня</span>
+            </div>
+
+            <div id="today-card" class="card today-card"></div>
+
+            <div id="entry-event-display" class="card hidden">
+                <h2>📌 Событие дня</h2>
+                <p id="event-text" style="color:var(--text);line-height:1.6;"></p>
+            </div>
+
+            <div class="mt-24">
+                <div class="period-selector" id="period-selector">
+                    <button class="btn btn-outline btn-small active" data-period="week">Нед</button>
+                    <button class="btn btn-outline btn-small" data-period="month">Меc</button>
+                    <button class="btn btn-outline btn-small" data-period="3months">3M</button>
+                    <button class="btn btn-outline btn-small" data-period="6months">6M</button>
+                    <button class="btn btn-outline btn-small" data-period="year">Год</button>
+                </div>
+
+                <div class="chart-container">
+                    <h3>📈 Динамика показателей</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="line-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>🎯 Средние значения (радар)</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="radar-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>📊 Сводка</h2>
+                    <div id="stats-grid" class="stats-grid"></div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>🗓 Календарь</h3>
+                    <div id="calendar-controls" style="display:flex;gap:8px;margin-bottom:12px;">
+                        <button class="btn btn-outline btn-small" id="cal-prev">←</button>
+                        <span id="cal-label" style="flex:1;text-align:center;font-weight:600;"></span>
+                        <button class="btn btn-outline btn-small" id="cal-next">→</button>
+                    </div>
+                    <div id="calendar-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Нижняя навигация -->
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="active">
+            <span class="nav-icon">📊</span>
+            <span>Главная</span>
+        </a>
+        <a href="/entries">
+            <span class="nav-icon">📋</span>
+            <span>Записи</span>
+        </a>
+        <a href="/settings">
+            <span class="nav-icon">⚙️</span>
+            <span>Настройки</span>
+        </a>
+        <a href="#" onclick="logout()">
+            <span class="nav-icon">🚪</span>
+            <span>Выход</span>
+        </a>
+    </nav>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

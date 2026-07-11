@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f0f1a">
+    <title>Трекер автогуманиста — Записи</title>
+    <link rel="manifest" href="/static/pwa/site.webmanifest">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Напоминание -->
+    <div id="reminder-banner" class="container hidden" style="padding-bottom:0;"></div>
+
+    <div class="container">
+        <h1 style="font-size:1.3rem;margin-bottom:16px;">📋 Все записи</h1>
+
+        <!-- Фильтры -->
+        <div class="card" style="padding:16px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:120px;">
+                    <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;">От</label>
+                    <input type="date" id="filter-from" style="width:100%;padding:8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:0.9rem;min-height:44px;">
+                </div>
+                <div style="flex:1;min-width:120px;">
+                    <label style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;">До</label>
+                    <input type="date" id="filter-to" style="width:100%;padding:8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:0.9rem;min-height:44px;">
+                </div>
+                <div style="display:flex;align-items:flex-end;gap:4px;">
+                    <button class="btn btn-primary btn-small" id="filter-apply" style="min-height:44px;">Применить</button>
+                    <button class="btn btn-outline btn-small" id="filter-reset" style="min-height:44px;">Сброс</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Таблица -->
+        <div class="card" style="overflow:hidden;padding:0;">
+            <div class="table-container">
+                <table id="entries-table">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>День</th>
+                            <th>Эн</th>
+                            <th>Ко</th>
+                            <th>Пр</th>
+                            <th>Вз</th>
+                            <th>Су</th>
+                            <th>Я</th>
+                            <th>День</th>
+                            <th>Соб</th>
+                        </tr>
+                    </thead>
+                    <tbody id="entries-body">
+                        <tr><td colspan="10" class="empty">Загрузка...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Пагинация -->
+        <div id="pagination" style="display:flex;justify-content:center;gap:8px;margin-top:16px;"></div>
+    </div>
+
+    <!-- Нижняя навигация -->
+    <nav class="bottom-nav">
+        <a href="/dashboard">
+            <span class="nav-icon">📊</span>
+            <span>Главная</span>
+        </a>
+        <a href="/entries" class="active">
+            <span class="nav-icon">📋</span>
+            <span>Записи</span>
+        </a>
+        <a href="/settings">
+            <span class="nav-icon">⚙️</span>
+            <span>Настройки</span>
+        </a>
+        <a href="#" onclick="logout()">
+            <span class="nav-icon">🚪</span>
+            <span>Выход</span>
+        </a>
+    </nav>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/entries.js"></script>
+</body>
+</html>
