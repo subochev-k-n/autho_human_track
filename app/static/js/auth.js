@@ -1,20 +1,42 @@
 // ============================================
-// Авторизация (логин, регистрация, проверка)
+// Авторизация — локальные профили (без пароля)
 // ============================================
 
-// Проверка авторизации при загрузке
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const path = window.location.pathname;
-    const isAuthPage = path === '/login' || path === '/register';
 
-    // Если есть токен и мы на странице входа — редирект на дашборд
-    if (API.isAuthenticated() && isAuthPage) {
+    // Инициализация БД
+    try {
+        await API.init();
+
+        // Seed данных для текущего пользователя
+        if (DB.currentUser) {
+            DB.seedFirstAid();
+        }
+    } catch (e) {
+        console.error("Init error:", e);
+        const container = document.getElementById('app') || document.querySelector('.container');
+        if (container) {
+            container.innerHTML = `<div class="card" style="text-align:center;padding:40px;">
+                <div style="font-size:3rem;margin-bottom:16px;">😵</div>
+                <h2>Ошибка инициализации</h2>
+                <p style="color:var(--text-muted);">${e.message}</p>
+                <p style="color:var(--text-muted);font-size:0.85rem;">Попробуйте Chrome или Edge последней версии.</p>
+            </div>`;
+        }
+        return;
+    }
+
+    // Перенаправление
+    const isAuthPage = path === '/login' || path === '/register' || path === '/' || path === '';
+    const isProtected = ['/dashboard', '/entries', '/settings', '/firstaid', '/firstaid/edit', '/firstaid/history'].includes(path.split('?')[0]);
+
+    if (API.isAuthenticated() && (isAuthPage || path === '/' || path === '')) {
         window.location.href = '/dashboard';
         return;
     }
 
-    // Если нет токена и мы не на странице входа — редирект на логин
-    if (!API.isAuthenticated() && !isAuthPage && path !== '/') {
+    if (!API.isAuthenticated() && isProtected) {
         window.location.href = '/login';
         return;
     }
@@ -30,20 +52,47 @@ function initLogin() {
     const form = document.getElementById('login-form');
     if (!form) return;
 
+    // Показать список существующих профилей
+    const users = DB.all("SELECT * FROM users ORDER BY username");
+    if (users.length > 0) {
+        const info = document.getElementById('login-info') || document.createElement('div');
+        if (!info.id) {
+            info.id = 'login-info';
+            info.className = 'mt-16';
+            info.style.cssText = 'text-align:center;';
+            form.parentNode.insertBefore(info, form.nextSibling);
+        }
+        info.innerHTML = `
+            <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:8px;">Или выберите профиль:</p>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;">
+                ${users.map(u => `<button class="btn btn-outline btn-small profile-btn" data-username="${u.username}" style="width:auto;">${u.username}</button>`).join('')}
+            </div>`;
+        info.querySelectorAll('.profile-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('username').value = btn.dataset.username;
+                form.querySelector('button').click();
+            });
+        });
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value;
         const errorEl = document.getElementById('login-error');
         const btn = form.querySelector('button');
+
+        if (!username) {
+            errorEl.textContent = 'Введите имя';
+            errorEl.classList.remove('hidden');
+            return;
+        }
 
         errorEl.classList.add('hidden');
         btn.disabled = true;
         btn.textContent = 'Вход...';
 
         try {
-            const data = await API.login(username, password);
-            API.setTokens(data.access_token, data.refresh_token);
+            await API.login(username);
             window.location.href = '/dashboard';
         } catch (err) {
             errorEl.textContent = err.message;
@@ -64,38 +113,29 @@ function initRegister() {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const username = document.getElementById('username').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
-        const confirm = document.getElementById('confirm-password').value;
         const errorEl = document.getElementById('register-error');
         const btn = form.querySelector('button');
 
+        if (!username || username.length < 2) {
+            errorEl.textContent = 'Имя должно быть минимум 2 символа';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+
         errorEl.classList.add('hidden');
-
-        if (password !== confirm) {
-            errorEl.textContent = 'Пароли не совпадают';
-            errorEl.classList.remove('hidden');
-            return;
-        }
-
-        if (password.length < 4) {
-            errorEl.textContent = 'Пароль должен быть минимум 4 символа';
-            errorEl.classList.remove('hidden');
-            return;
-        }
-
         btn.disabled = true;
-        btn.textContent = 'Регистрация...';
+        btn.textContent = 'Создание...';
 
         try {
-            await API.register(username, email, password);
-            window.location.href = '/login?registered=1';
+            await API.register(username);
+            DB.seedFirstAid();
+            window.location.href = '/dashboard';
         } catch (err) {
             errorEl.textContent = err.message;
             errorEl.classList.remove('hidden');
         } finally {
             btn.disabled = false;
-            btn.textContent = 'Зарегистрироваться';
+            btn.textContent = 'Создать профиль';
         }
     });
 }
