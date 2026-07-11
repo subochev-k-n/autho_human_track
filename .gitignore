@@ -8,6 +8,9 @@ build/
 venv/
 env/
 
+# Node
+node_modules/
+
 # IDE
 .idea/
 .vscode/
