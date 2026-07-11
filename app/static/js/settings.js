@@ -6,6 +6,7 @@ let columns = [];
 let draggedIndex = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    try { await API.init(); } catch (e) { return; }
     if (!API.isAuthenticated()) return;
 
     // Показать напоминание

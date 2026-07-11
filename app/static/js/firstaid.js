@@ -22,6 +22,14 @@ let currentType = '';
 let currentItemId = null; // для модалки
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Дожидаемся инициализации БД
+    try {
+        await API.init();
+    } catch (e) {
+        console.error("DB init error in firstaid:", e);
+        return;
+    }
+
     const path = window.location.pathname;
     if (path === '/firstaid') initFirstAid();
     else if (path === '/firstaid/edit') initEdit();

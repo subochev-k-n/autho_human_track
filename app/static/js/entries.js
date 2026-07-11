@@ -7,6 +7,7 @@ const PER_PAGE = 50;
 let customFields = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
+    try { await API.init(); } catch (e) { return; }
     if (!API.isAuthenticated()) return;
 
     try {
