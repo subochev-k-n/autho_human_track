@@ -43,30 +43,21 @@ const DB = {
             // Пытаемся загрузить существующую БД с диска
             let savedData = null;
 
-            // 1. Пробуем OPFS
-            if ("storage" in navigator && "getDirectory" in navigator.storage) {
-                try {
-                    const root = await navigator.storage.getDirectory();
-                    const fileHandle = await root.getFileHandle("tracker.db", { create: false });
-                    const file = await fileHandle.getFile();
-                    savedData = new Uint8Array(await file.arrayBuffer());
-                    console.log("📂 Загружено из OPFS");
-                } catch (e) {
-                    // Файла ещё нет — нормально
-                }
-            }
+            // Загружаем из localStorage (единственный источник)
+            // Фикс: если есть битый btoa-мусор от старой версии — чистим
+            const oldBtoa = localStorage.getItem("tracker_db_btoa");
+            if (oldBtoa) localStorage.removeItem("tracker_db_btoa");
 
-            // 2. Fallback на localStorage
-            if (!savedData) {
-                const local = localStorage.getItem("tracker_db");
-                if (local) {
-                    try {
-                        const arr = JSON.parse(local);
+            const local = localStorage.getItem("tracker_db");
+            if (local) {
+                try {
+                    const arr = JSON.parse(local);
+                    if (Array.isArray(arr) && arr.length > 0) {
                         savedData = new Uint8Array(arr);
                         console.log("📂 Загружено из localStorage (" + arr.length + " байт)");
-                    } catch (e) {
-                        console.warn("Ошибка загрузки из localStorage, стартуем чистую БД");
                     }
+                } catch (e) {
+                    console.warn("Ошибка загрузки из localStorage, стартуем чистую БД");
                 }
             }
 
@@ -206,8 +197,6 @@ const DB = {
         try {
             this.db.run(sql, params.map(p => p === undefined ? null : p));
             this._save();  // синхронное сохранение в localStorage
-            // OPFS — асинхронно, не блокирует
-            this._saveTimer = this._saveTimer || setTimeout(() => { this._saveTimer = null; this._saveOpfs(); }, 1000);
             if (sql.trim().toUpperCase().startsWith("INSERT")) {
                 const rows = this._execRaw("SELECT last_insert_rowid() as id");
                 return rows.length > 0 ? rows[0].id : null;
