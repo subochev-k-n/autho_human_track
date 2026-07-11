@@ -139,10 +139,3 @@ function initRegister() {
         }
     });
 }
-
-// --- Выход ---
-
-function logout() {
-    API.clearTokens();
-    window.location.href = '/login';
-}

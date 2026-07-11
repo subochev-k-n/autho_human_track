@@ -7,11 +7,18 @@ const DB = {
     currentUser: null,
     _dirty: false,
     _saveTimer: null,
+    _initPromise: null,  // защита от гонки при параллельных вызовах init()
 
     // Инициализация sql.js
     init: async function () {
         if (this.db) return this.db;
+        if (this._initPromise) return this._initPromise;
 
+        this._initPromise = this._doInit();
+        return this._initPromise;
+    },
+
+    _doInit: async function () {
         const SQL_URL = "https://cdn.jsdelivr.net/npm/sql.js@1.11.0/dist/";
 
         try {

@@ -3,6 +3,13 @@
 // Все методы сохраняют те же названия и сигнатуры
 // ============================================
 
+// Глобальная функция выхода — не зависит от инициализации
+function logout() {
+    localStorage.removeItem("current_user_id");
+    if (typeof DB !== 'undefined' && DB.currentUser) DB.currentUser = null;
+    window.location.href = '/login';
+}
+
 const API = {
     isReady: false,
 
