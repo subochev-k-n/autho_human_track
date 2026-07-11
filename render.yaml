@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: autho-human-track
+    runtime: python
+    repo: https://github.com/subochev-k-n/autho_human_track
+    region: frankfurt
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT main:app
+    healthCheckPath: /health
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: TIMEZONE
+        value: Europe/Moscow

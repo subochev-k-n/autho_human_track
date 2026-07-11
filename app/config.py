@@ -21,10 +21,9 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Если Railway передал PostgreSQL — оставляем как есть,
-# иначе используем SQLite (для локальной разработки)
-if settings.DATABASE_URL and settings.DATABASE_URL.startswith("postgres"):
-    # Railway использует postgres://, но SQLAlchemy ждёт postgresql://
+# Если хостинг передал PostgreSQL (Railway, Render) — чиним протокол
+if settings.DATABASE_URL and settings.DATABASE_URL.startswith("postgres://"):
+    # SQLAlchemy требует postgresql://, а не postgres://
     settings.DATABASE_URL = settings.DATABASE_URL.replace(
         "postgres://", "postgresql://", 1
     )
