@@ -20,6 +20,9 @@ const API = {
 
     init: async function () {
         try {
+            if (typeof DB === 'undefined' || typeof DB.init !== 'function') {
+                throw new Error("DB не загружен (проверьте консоль)");
+            }
             await DB.init();
             this.isReady = true;
         } catch (e) {
